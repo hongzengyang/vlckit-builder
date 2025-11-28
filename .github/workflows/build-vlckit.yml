@@ -1,50 +1,52 @@
-name: Build VLCKit (iOS arm64 Only)
+name: Build VLCKit 4.0.0a11 (iOS arm64)
 
 on:
   workflow_dispatch:
 
 jobs:
   build:
-    runs-on: macos-15  # macOS 15 (Sequoia)
+    runs-on: macos-15
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Select Xcode 16.2
         run: sudo xcode-select -s /Applications/Xcode_16.2.app
 
-      - name: Verify Xcode version
-        run: xcodebuild -version
-
-      - name: Install Python 3.7 (official installer, NOT homebrew)
+      - name: Install Python 3.7  # 必须，否则 VLCKit 无法构建
         run: |
           curl -O https://www.python.org/ftp/python/3.7.9/python-3.7.9-macosx10.9.pkg
           sudo installer -pkg python-3.7.9-macosx10.9.pkg -target /
           echo "/Library/Frameworks/Python.framework/Versions/3.7/bin" >> $GITHUB_PATH
 
-      - name: Verify Python 3.7
-        run: python3.7 --version
-
-      - name: Clone VLCKit
+      - name: Clone VLCKit with tag 4.0.0a11
         run: |
           git clone https://code.videolan.org/videolan/VLCKit.git
           cd VLCKit
+          git fetch --all --tags
+          git checkout 4.0.0a11
           git submodule update --init --recursive
 
-      - name: Build VLCKit (iOS arm64 only)
+      - name: Build libvlc (iOS arm64)
         run: |
           cd VLCKit
           chmod +x compileAndBuildVLCKit.sh
           ./compileAndBuildVLCKit.sh -a aarch64
 
-      - name: Find results
-        run: find . -name "MobileVLCKit*" -maxdepth 4
+      - name: Build MobileVLCKit.framework (iOS arm64)
+        run: |
+          cd VLCKit
+          chmod +x buildMobileVLCKit.sh
+          ./buildMobileVLCKit.sh -a aarch64
 
-      - name: Upload Framework
+      - name: Check output paths
+        run: |
+          find VLCKit -name "MobileVLCKit*" -print
+
+      - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: MobileVLCKit-arm64
           path: |
-            VLCKit/build/**/MobileVLCKit.framework
-            VLCKit/build/**/MobileVLCKit.xcframework
+            VLCKit/build/**/*MobileVLCKit.framework
+            VLCKit/build/**/*MobileVLCKit.xcframework
