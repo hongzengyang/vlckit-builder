@@ -13,13 +13,13 @@ jobs:
       - name: Select Xcode 16.2
         run: sudo xcode-select -s /Applications/Xcode_16.2.app
 
-      - name: Install Python 3.7  # 必须，否则 VLCKit 无法构建
+      - name: Install Python 3.7
         run: |
           curl -O https://www.python.org/ftp/python/3.7.9/python-3.7.9-macosx10.9.pkg
           sudo installer -pkg python-3.7.9-macosx10.9.pkg -target /
           echo "/Library/Frameworks/Python.framework/Versions/3.7/bin" >> $GITHUB_PATH
 
-      - name: Clone VLCKit with tag 4.0.0a11
+      - name: Clone VLCKit + checkout tag 4.0.0a11
         run: |
           git clone https://code.videolan.org/videolan/VLCKit.git
           cd VLCKit
@@ -27,26 +27,22 @@ jobs:
           git checkout 4.0.0a11
           git submodule update --init --recursive
 
-      - name: Build libvlc (iOS arm64)
+      - name: Build VLCKit (iOS arm64)
         run: |
           cd VLCKit
           chmod +x compileAndBuildVLCKit.sh
           ./compileAndBuildVLCKit.sh -a aarch64
 
-      - name: Build MobileVLCKit.framework (iOS arm64)
+      - name: Show outputs
         run: |
-          cd VLCKit
-          chmod +x buildMobileVLCKit.sh
-          ./buildMobileVLCKit.sh -a aarch64
-
-      - name: Check output paths
-        run: |
-          find VLCKit -name "MobileVLCKit*" -print
+          echo "Searching for VLCKit.framework ..."
+          find VLCKit -name "VLCKit.framework" -print
+          find VLCKit -name "*.xcframework" -print
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: MobileVLCKit-arm64
+          name: VLCKit-iOS-arm64
           path: |
-            VLCKit/build/**/*MobileVLCKit.framework
-            VLCKit/build/**/*MobileVLCKit.xcframework
+            VLCKit/**/VLCKit.framework
+            VLCKit/**/VLCKit.xcframework
