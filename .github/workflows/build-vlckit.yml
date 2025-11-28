@@ -1,0 +1,50 @@
+name: Build VLCKit (iOS arm64)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build VLCKit on macOS 13 with Xcode 14.3
+    runs-on: macos-13
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Select Xcode 14.3
+        run: sudo xcode-select -s /Applications/Xcode_14.3.app
+
+      - name: Check Xcode version
+        run: xcodebuild -version
+
+      - name: Install Python 3.7 via pyenv
+        run: |
+          brew update
+          brew install pyenv
+          pyenv install 3.7.12
+          pyenv global 3.7.12
+          python3 --version
+
+      - name: Clone VLCKit
+        run: |
+          git clone https://code.videolan.org/videolan/VLCKit.git
+          cd VLCKit
+          git submodule update --init --recursive
+
+      - name: Build VLCKit (iOS arm64)
+        run: |
+          cd VLCKit
+          chmod +x compileAndBuildVLCKit.sh
+          ./compileAndBuildVLCKit.sh -a aarch64
+
+      - name: List build output
+        run: find VLCKit -name "MobileVLCKit*"
+
+      - name: Upload Framework
+        uses: actions/upload-artifact@v3
+        with:
+          name: VLCKit-iOS
+          path: |
+            VLCKit/build/**/MobileVLCKit.framework
+            VLCKit/build/**/MobileVLCKit.xcframework
