@@ -15,16 +15,18 @@ jobs:
       - name: Select Xcode 14.3
         run: sudo xcode-select -s /Applications/Xcode_14.3.app
 
-      - name: Check Xcode version
-        run: xcodebuild -version
-
-      - name: Install Python 3.7 via pyenv
+      - name: Install Python 3.7 (official installer)
         run: |
-          brew update
-          brew install pyenv
-          pyenv install 3.7.12
-          pyenv global 3.7.12
-          python3 --version
+          curl -O https://www.python.org/ftp/python/3.7.9/python-3.7.9-macosx10.9.pkg
+          sudo installer -pkg python-3.7.9-macosx10.9.pkg -target /
+          python3.7 --version || true
+
+      - name: Add Python 3.7 to PATH
+        run: |
+          echo "/Library/Frameworks/Python.framework/Versions/3.7/bin" >> $GITHUB_PATH
+
+      - name: Verify Python 3.7
+        run: python3.7 --version
 
       - name: Clone VLCKit
         run: |
@@ -38,7 +40,7 @@ jobs:
           chmod +x compileAndBuildVLCKit.sh
           ./compileAndBuildVLCKit.sh -a aarch64
 
-      - name: List build output
+      - name: List output
         run: find VLCKit -name "MobileVLCKit*"
 
       - name: Upload Framework
@@ -48,4 +50,3 @@ jobs:
           path: |
             VLCKit/build/**/MobileVLCKit.framework
             VLCKit/build/**/MobileVLCKit.xcframework
-
